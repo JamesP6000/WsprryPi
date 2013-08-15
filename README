@@ -34,7 +34,7 @@ Usage: (WSPR --help output):
     -p --ppm ppm
       Known PPM correction to 19.2MHz RPi nominal crystal frequency.
     -s --self-calibration
-      Query ntpd before every transmission to obtain the PPM error of the xtal.
+      Call ntp_adjtime() before every transmission to obtain the PPM error of the xtal.
     -r --repeat
       Repeatedly, and in order, transmit on all the specified freqs.
     -x --terminate <n>

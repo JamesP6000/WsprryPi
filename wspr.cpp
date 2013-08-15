@@ -39,6 +39,7 @@ License:
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <sys/timex.h>
 
 using namespace std;
 
@@ -622,7 +623,7 @@ void print_usage() {
   cout << "  -p --ppm ppm" << endl;
   cout << "    Known PPM correction to 19.2MHz RPi nominal crystal frequency." << endl;
   cout << "  -s --self-calibration" << endl;
-  cout << "    Query ntpd before every transmission to obtain the PPM error of the crystal." << endl;
+  cout << "    Call ntp_adjtime() before every transmission to obtain the PPM error of the crystal." << endl;
   cout << "  -r --repeat" << endl;
   cout << "    Repeatedly, and in order, transmit on all the specified command line freqs." << endl;
   cout << "  -x --terminate <n>" << endl;
@@ -861,20 +862,6 @@ void parse_commandline(
       cerr << "Try: wspr --help" << endl;
       ABORT(-1);
     }
-    if (self_cal) {
-      if (exec("which ntpdc")=="") {
-        cerr << "Error: ntpdc must be on the path if self calibration option is turned on" << endl;
-        ABORT(-1);
-      }
-      if (exec("which grep")=="") {
-        cerr << "Error: grep must be on the path if self calibration option is turned on" << endl;
-        ABORT(-1);
-      }
-      if (exec("which awk")=="") {
-        cerr << "Error: awk must be on the path if self calibration option is turned on" << endl;
-        ABORT(-1);
-      }
-    }
   }
 
   // Print a summary of the parsed options
@@ -892,7 +879,7 @@ void parse_commandline(
     cout << temp.str();
     temp.str("");
     if (self_cal) {
-      temp << "  ntpd will be used to peridocially calibrate the transmission frequency" << endl;
+      temp << "  ntp_adjtime() will be used to peridocially calibrate the transmission frequency" << endl;
     } else if (ppm) {
       temp << "  PPM value to be used for all transmissions: " << ppm << endl;
     }
@@ -914,7 +901,7 @@ void parse_commandline(
     temp << setprecision(6) << fixed << "A test tone will be generated at frequency " << test_tone/1e6 << " MHz" << endl;
     cout << temp.str();
     if (self_cal) {
-      cout << "ntpd will be used to calibrate the tone" << endl;
+      cout << "ntp_adjtime() will be used to calibrate the tone" << endl;
     } else if (ppm) {
       cout << "PPM value to be used to generate the tone: " << ppm << endl;
     }
@@ -922,15 +909,25 @@ void parse_commandline(
   }
 }
 
-// Call ntpd to obtain the latest calibration coefficient.
+// Call ntp_adjtime() to obtain the latest calibration coefficient.
 void update_ppm(
   double & ppm
 ) {
-  stringstream ppm_new_string(exec("ntpdc -c loopinfo | grep ppm | awk '{print $2}'"));
-  double ppm_new=0.0;
-  ppm_new_string >> ppm_new;
+  struct timex ntx;
+  int status;
+  double ppm_new;
+
+  ntx.modes = 0; /* only read */
+  status = ntp_adjtime(&ntx);
+
+  if (status != TIME_OK) {
+    cerr << "Error: clock not synchronized" << endl;
+    return;
+  }
+
+  ppm_new = (double)ntx.freq/(double)(1 << 16); /* frequency scale */
   if (abs(ppm_new)>200) {
-    cerr << "Warning: ntpdc absolute ppm value is greater than 200 and is being ignored!" << endl;
+    cerr << "Warning: absolute ppm value is greater than 200 and is being ignored!" << endl;
   } else {
     if (ppm!=ppm_new) {
       cout << "  Obtained new ppm value: " << ppm_new << endl;
