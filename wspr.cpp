@@ -782,7 +782,7 @@ void parse_commandline(
   no_delay=false;
   mode=WSPR;
   terminate=-1;
-  blink_led=true;
+  blink_led=false;
 
   static struct option long_options[] = {
     {"help",             no_argument,       0, 'h'},
