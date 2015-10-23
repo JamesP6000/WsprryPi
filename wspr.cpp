@@ -39,6 +39,7 @@ License:
 #include <getopt.h>
 #include <vector>
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <iomanip>
 #include <sys/timex.h>
@@ -116,7 +117,7 @@ volatile unsigned *allof7e = NULL;
 #define DMA_PHYS_BASE (0x7E007000)
 #define PWM_PHYS_BASE  (0x7e20C000) /* PWM controller */
 
-
+#define OK_LED_CONTROL_FNAME "/sys/class/leds/led0/brightness"
 
 
 
@@ -237,6 +238,16 @@ void deallocMemPool()
 	    mem_unlock(mbox.handle, mbox.mem_ref);
 	    mem_free(mbox.handle, mbox.mem_ref);	
 	}
+}
+
+void set_led(bool on)
+{
+    // Turn OK LED on or off
+    ofstream ledfile;
+    ledfile.open(OK_LED_CONTROL_FNAME);
+    if (on) ledfile << "1";
+    else ledfile << "0";
+    ledfile.close();
 }
 
 void txon()
@@ -716,6 +727,8 @@ void print_usage() {
   cout << "  -n --no-delay" << endl;
   cout << "    Transmit immediately, do not wait for a WSPR TX window. Used" << endl;
   cout << "    for testing only." << endl;
+  cout << "  -l --blink-led" << endl;
+  cout << "    Blink OK LED during transmission." << endl;
   cout << endl;
   cout << "Frequencies can be specified either as an absolute TX carrier frequency, or" << endl;
   cout << "using one of the following strings. If a string is used, the transmission" << endl;
@@ -757,7 +770,8 @@ void parse_commandline(
   double & test_tone,
   bool & no_delay,
   mode_type & mode,
-  int & terminate
+  int & terminate,
+  bool & blink_led
 ) {
   // Default values
   ppm=0;
@@ -768,6 +782,7 @@ void parse_commandline(
   no_delay=false;
   mode=WSPR;
   terminate=-1;
+  blink_led=false;
 
   static struct option long_options[] = {
     {"help",             no_argument,       0, 'h'},
@@ -778,13 +793,14 @@ void parse_commandline(
     {"offset",           no_argument,       0, 'o'},
     {"test-tone",        required_argument, 0, 't'},
     {"no-delay",         no_argument,       0, 'n'},
+    {"blink-led",          no_argument,       0, 'l'},
     {0, 0, 0, 0}
   };
 
   while (1) {
     /* getopt_long stores the option index here. */
     int option_index = 0;
-    int c = getopt_long (argc, argv, "hp:srx:ot:n",
+    int c = getopt_long (argc, argv, "hp:srx:ot:nl",
                      long_options, &option_index);
     if (c == -1)
       break;
@@ -838,6 +854,9 @@ void parse_commandline(
         break;
       case 'n':
         no_delay=true;
+        break;
+      case 'l':
+        blink_led=true;
         break;
       case '?':
         /* getopt_long already printed an error message. */
@@ -1062,6 +1081,7 @@ int main(const int argc, char * const argv[]) {
   bool no_delay;
   mode_type mode;
   int terminate;
+  bool blink_led;
   parse_commandline(
     argc,
     argv,
@@ -1076,7 +1096,8 @@ int main(const int argc, char * const argv[]) {
     test_tone,
     no_delay,
     mode,
-    terminate
+    terminate,
+    blink_led
   );
   int nbands=center_freq_set.size();
 
@@ -1163,6 +1184,8 @@ int main(const int argc, char * const argv[]) {
     printf("\n");
     */
 
+    if (blink_led) set_led(false); /* turn led off initially */
+
     printf("Ready to transmit (setup complete)...\n");
     int band=0;
     int n_tx=0;
@@ -1223,8 +1246,11 @@ int main(const int argc, char * const argv[]) {
         struct timeval sym_start;
         struct timeval diff;
         int bufPtr=0;
+        bool led_toggle=true;
         txon();
         for (int i = 0; i < 162; i++) {
+          if (blink_led) set_led(led_toggle);
+          led_toggle ^= true;
           gettimeofday(&sym_start,NULL);
           timeval_subtract(&diff, &sym_start, &tvBegin);
           double elapsed=diff.tv_sec+diff.tv_usec/1e6;
@@ -1247,6 +1273,7 @@ int main(const int argc, char * const argv[]) {
         timeval_print(&tvEnd);
         timeval_subtract(&tvDiff, &tvEnd, &tvBegin);
         printf(" (%ld.%03ld s)\n", tvDiff.tv_sec, (tvDiff.tv_usec+500)/1000);
+        if (blink_led) set_led(false);
 
       } else {
         cout << "  Skipping transmission" << endl;
