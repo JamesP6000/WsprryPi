@@ -11,4 +11,8 @@ Issues:
   from 5V supply), caused by short-circuiting in the 3.3V logic of the BCM2835
   SOC. On his replacement RPi, he is planning to add galvanic isolation and
   buffering.
-
+  
+  Program does not seem to function properly when running on an original Model 
+  B Raspberry Pi under Raspbian Jessie Lite. Program appears to run, but no
+  spots have been received when using this combination of hardware and software.
+  Thw same hardware works fine when WsprryPi is run under Raspbian Wheezy.
