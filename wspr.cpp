@@ -44,6 +44,7 @@
 #include <algorithm>
 #include <pthread.h>
 #include <sys/timex.h>
+#include <signal.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -1120,6 +1121,11 @@ void setup_peri_base_virt(
 int main(const int argc, char * const argv[]) {
   //catch all signals (like ctrl+c, ctrl+z, ...) to ensure DMA is disabled
   for (int i = 0; i < 64; i++) {
+    // Do not set up a handler for signal 28 (SIGWINCH).  This signal is used
+    // to signify a terminal window resize event and is NOT a reason for the
+    // process to terminate.
+    if (i == SIGWINCH)
+      continue;
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = cleanupAndExit;
