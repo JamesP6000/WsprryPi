@@ -466,6 +466,8 @@ void parse_commandline(
       parsed_freq=70092500.0;
     } else if (!strcasecmp(argv[optind],"2m")) {
       parsed_freq=144490500.0;
+    } else if (!strcasecmp(argv[optind],"70cm")) {
+      parsed_freq=432300500.0;
     } else {
       // Not a string. See if it can be parsed as a double.
       char * endp;
@@ -774,13 +776,26 @@ int main(const int argc, char * const argv[]) {
 		if(ngfmtest==NULL)
 			ngfmtest=new ngfmdmasync(center_freq_actual,SR,14,FifoSize);
 		
-		
-       
+		double FreqResolution=ngfmtest->GetFrequencyResolution();
+     
+		double RealFreq=ngfmtest->GetRealFrequency(0);	
+		if(FreqResolution>tone_spacing)
+		{
+			  fprintf(stderr,"Freq resolution=%f - Tone spacing =%f Erreur tuning=%f\n",FreqResolution,tone_spacing,RealFreq);
+			   			
+		}
 		
         for (int i = 0; i < 162; i++)
 		{
-			double tone_freq=-1.5*tone_spacing+symbols[i]*tone_spacing;
+			double tone_freq=-1.5*tone_spacing+symbols[i]*tone_spacing-RealFreq;
 			int Nbtx=0;
+			
+				int Frac=ngfmtest->GetMasterFrac(0);
+				int IntFreq=floor(tone_freq/FreqResolution);
+				double ToneFreqInf=tone_freq-IntFreq;
+				int Step=ToneFreqInf*100.0/FreqResolution;
+			
+
 			while(Nbtx<100)
 			{
 				usleep(100);
@@ -793,7 +808,10 @@ int main(const int argc, char * const argv[]) {
 					for(int j=0;j<Available;j++)
 					{
 						//ngfmtest.SetFrequencySample(Index,((i%10000)>5000)?1000:0);
-						ngfmtest->SetFrequencySample(Index+j,tone_freq/*+(rand()/((double)RAND_MAX)-.5)*8.0*/);
+						double pwmtone=(Nbtx>abs(Step))?(IntFreq*FreqResolution):((IntFreq+1)*FreqResolution);
+						//fprintf(stderr,"Frac %d IntFreq %d step %d tone= %f pwm %f\n",Frac,IntFreq,Step,tone_freq,pwmtone);
+						ngfmtest->SetFrequencySample(Index+j,pwmtone);
+						//ngfmtest->SetFrequencySample(Index+j,tone_freq);
 						Nbtx++;
 						
 			
