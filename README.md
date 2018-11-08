@@ -1,4 +1,4 @@
-Raspberry Pi bareback LF/MF/HF/VHF WSPR transmitter
+# Raspberry Pi bareback LF/MF/HF/VHF WSPR transmitter
 
 Makes a very simple WSPR beacon from your RasberryPi by connecting GPIO
 port to Antenna (and LPF), operates on LF, MF, HF and VHF bands from
@@ -8,7 +8,7 @@ Compatible with the original Raspberry Pi, the Raspberry Pi 2/3, and
 the Pi Zero.
 
 This version uses https://github.com/F5OEO/librpitx
-**You need to add gpu_freq=250 in /boot/config.txt. Without that transmiting is unstable"
+**You need to add gpu_freq=250 in /boot/config.txt. Without that transmiting is unstable"**
 
 
 ******
