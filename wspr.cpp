@@ -759,7 +759,7 @@ int main(const int argc, char * const argv[]) {
       }
 
       // Send the message!
-      //cout << "TX started!" << std::endl;
+      //std::cout << "TX started!" << std::endl;
       if (center_freq_actual){
         // Print a status message right before transmission begins.
         struct timeval tvBegin, tvEnd, tvDiff;
@@ -775,7 +775,8 @@ int main(const int argc, char * const argv[]) {
 		int FifoSize=1000;
 		if(ngfmtest==NULL)
 			ngfmtest=new ngfmdmasync(center_freq_actual,SR,14,FifoSize);
-		
+		else
+			ngfmtest->enableclk(4);
 		double FreqResolution=ngfmtest->GetFrequencyResolution();
      
 		double RealFreq=ngfmtest->GetRealFrequency(0);	
@@ -823,7 +824,7 @@ int main(const int argc, char * const argv[]) {
         n_tx++;
 
         // Turn transmitter off
-        ngfmtest->stop();
+        ngfmtest->disableclk(4);
 
         // End timestamp
         gettimeofday(&tvEnd, NULL);
