@@ -771,10 +771,16 @@ int main(const int argc, char * const argv[]) {
         struct timeval sym_start;
         struct timeval diff;
         int bufPtr=0;
-		int SR=100*1/wspr_symtime;
-		int FifoSize=1000;
+		int Upsample=10000;
+		int SR=Upsample*1/wspr_symtime;
+		int FifoSize=40000;
+		bool usePWMSample=false;
+		static float *FreqPWM=NULL;
 		if(ngfmtest==NULL)
-			ngfmtest=new ngfmdmasync(center_freq_actual,SR,14,FifoSize);
+		{
+			ngfmtest=new ngfmdmasync(center_freq_actual,SR,14,FifoSize,true);
+			FreqPWM=(float*)malloc(Upsample*sizeof(float));
+		}
 		else
 			ngfmtest->enableclk(4);
 		double FreqResolution=ngfmtest->GetFrequencyResolution();
@@ -783,6 +789,7 @@ int main(const int argc, char * const argv[]) {
 		if(FreqResolution>tone_spacing)
 		{
 			  fprintf(stderr,"Freq resolution=%f - Tone spacing =%f Erreur tuning=%f\n",FreqResolution,tone_spacing,RealFreq);
+			  usePWMSample=true; 	
 			   			
 		}
 		
@@ -790,36 +797,30 @@ int main(const int argc, char * const argv[]) {
 		{
 			double tone_freq=-1.5*tone_spacing+symbols[i]*tone_spacing-RealFreq;
 			int Nbtx=0;
-			
+			int f1=0;
 				int Frac=ngfmtest->GetMasterFrac(0);
 				int IntFreq=floor(tone_freq/FreqResolution);
 				double ToneFreqInf=tone_freq-IntFreq;
-				int Step=ToneFreqInf*100.0/FreqResolution;
+				int Step=ToneFreqInf*Upsample/FreqResolution;
 			
-
-			while(Nbtx<100)
+			if(!usePWMSample)
 			{
-				usleep(100);
-				int Available=ngfmtest->GetBufferAvailable();
-				if(Available>FifoSize/2)
-				{	
-					int Index=ngfmtest->GetUserMemIndex();
-					if(Available>100-Nbtx) Available=100-Nbtx;
-					//printf("GetIndex=%d\n",Index);
-					for(int j=0;j<Available;j++)
-					{
-						//ngfmtest.SetFrequencySample(Index,((i%10000)>5000)?1000:0);
-						double pwmtone=(Nbtx>abs(Step))?(IntFreq*FreqResolution):((IntFreq+1)*FreqResolution);
-						//fprintf(stderr,"Frac %d IntFreq %d step %d tone= %f pwm %f\n",Frac,IntFreq,Step,tone_freq,pwmtone);
-						ngfmtest->SetFrequencySample(Index+j,pwmtone);
-						//ngfmtest->SetFrequencySample(Index+j,tone_freq);
-						Nbtx++;
-						
-			
-					}
+				for(int j=0;j<Upsample;j++)
+				{
+					FreqPWM[j]=tone_freq;
 				}
+			}
+			else
+			{
+				// Todo : Implement PWMFrequency to obtain better frequency resolution
+				for(int j=0;j<Upsample;j++)
+				{
+					FreqPWM[j]=tone_freq;
+				}
+				
+			}
+			ngfmtest->SetFrequencySamples(FreqPWM,Upsample);
 			
-		    }
 		}
         n_tx++;
 
@@ -844,6 +845,7 @@ int main(const int argc, char * const argv[]) {
         break;
       }
       if ((terminate>0)&&(n_tx>=terminate)) {
+		
         break;
       }
 
