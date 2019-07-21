@@ -79,6 +79,8 @@ Usage: (WSPR --help output):
 
   Transmission gaps can be created by specifying a TX frequency of 0
 
+  This program supports both 4 and 6 character Maidenhead grid locators.
+
   Note that 'callsign', 'locator', and 'tx_power_dBm' are simply used to fill
   in the appropriate fields of the WSPR message. Normally, tx_power_dBm should
   be 10, representing the signal power coming out of the Pi. Set this value
@@ -202,6 +204,9 @@ Example usage:
   The same as above, but without NTP calibration:
     sudo ./wspr --free-running N9NNN EM10 33 20m
 
+  Specify a 6 character Maidenhead grid locator with TX power 20 dBm on 20m:
+    sudo ./wspr K0WBG DM65rc 20 20m
+
   Transmit a WSPR transmission slightly off-center on 30m every 10 minutes for
   a total of 7 transmissions, and using a fixed PPM correction value.
     sudo ./wspr --repeat --terminate 7 --ppm 43.17 N9NNN EM10 33 10140210 0 0 0 0
@@ -219,6 +224,7 @@ Reference documentation:
   http://www.scribd.com/doc/101830961/GPIO-Pads-Control2
   https://github.com/mgottschlag/vctools/blob/master/vcdb/cm.yaml
   https://www.kernel.org/doc/Documentation/vm/pagemap.txt
+  https://physics.princeton.edu/pulsar/k1jt/WSPR_2.0_User.pdf (specifically Appendix B)
 
 ******
 Credits:
@@ -247,6 +253,9 @@ Credits:
 
   Retzler András (HA7ILM) for the massive changes that were required to
   incorporate the mailbox code so that the RPi2 and RPi3 could be supported.
+
+  Mathias Gibbens (K0WBG) added support for sending 6 character Maidenhead grid
+  locators to the program as well as performing some code cleanup.
 
   [1] PiFM code from
       http://www.icrobotics.co.uk/wiki/index.php/Turning_the_Raspberry_Pi_Into_an_FM_Transmitter

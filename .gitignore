@@ -1,3 +1,4 @@
 wspr
 gpioclk
 mailbox.o
+nhash.o

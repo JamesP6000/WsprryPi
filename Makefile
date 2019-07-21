@@ -1,7 +1,7 @@
 prefix=/usr/local
 
 CFLAGS += -Wall
-CXXFLAGS += -D_GLIBCXX_DEBUG -std=c++11 -Wall -Werror -fmax-errors=5
+CXXFLAGS += -D_GLIBCXX_DEBUG -std=c++14 -Wall -Werror -Wno-psabi
 LDLIBS += -lm
 
 ifeq ($(findstring armv6,$(shell uname -m)),armv6)
@@ -18,11 +18,14 @@ all: wspr gpioclk
 mailbox.o: mailbox.c mailbox.h
 	$(CC) $(CFLAGS) -c mailbox.c
 
-wspr: mailbox.o wspr.cpp mailbox.h
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LDLIBS) $(PI_VERSION) mailbox.o wspr.cpp -owspr
+nhash.o: nhash.c nhash.h
+	$(CC) $(CFLAGS) -c nhash.c
+
+wspr: mailbox.o nhash.o wspr.cpp mailbox.h
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LDLIBS) $(PI_VERSION) mailbox.o nhash.o wspr.cpp -o wspr
 
 gpioclk: gpioclk.cpp
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LDLIBS) $(PI_VERSION) gpioclk.cpp -ogpioclk
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LDLIBS) $(PI_VERSION) gpioclk.cpp -o gpioclk
 
 clean:
 	$(RM) *.o gpioclk wspr
