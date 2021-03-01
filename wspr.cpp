@@ -170,6 +170,9 @@ volatile unsigned *peri_base_virt = NULL;
 
 // The following are all bus addresses.
 #define GPIO_BUS_BASE (0x7E200000)
+//added for TX SWITCH
+#define GPIO_SET_BASE (0x7E20001c)
+#define GPIO_CLR_BASE (0x7E200028)
 #define CM_GP0CTL_BUS (0x7e101070)
 #define CM_GP0DIV_BUS (0x7e101074)
 #define PADS_GPIO_0_27_BUS  (0x7e10002c)
@@ -317,6 +320,12 @@ void txon() {
   SETBIT_BUS_ADDR(GPIO_BUS_BASE , 14);
   CLRBIT_BUS_ADDR(GPIO_BUS_BASE , 13);
   CLRBIT_BUS_ADDR(GPIO_BUS_BASE , 12);
+  
+  //GPIO 5 USED FOR TX SWITCH
+  //SET AS OUTPUT
+  CLRBIT_BUS_ADDR(GPIO_BUS_BASE , 17);
+  CLRBIT_BUS_ADDR(GPIO_BUS_BASE , 16);
+  SETBIT_BUS_ADDR(GPIO_BUS_BASE , 15);
 
   // Set GPIO drive strength, more info: http://www.scribd.com/doc/101830961/GPIO-Pads-Control2
   //ACCESS_BUS_ADDR(PADS_GPIO_0_27_BUS) = 0x5a000018 + 0;  //2mA -3.4dBm
@@ -336,13 +345,19 @@ void txon() {
   // Enable clock.
   setupword = {6/*SRC*/, 1, 0, 0, 0, 3,0x5a};
   ACCESS_BUS_ADDR(CM_GP0CTL_BUS) = *((int*)&setupword);
+  
+  // TX SWITCH HIGH
+  SETBIT_BUS_ADDR(GPIO_SET_BASE , 5);
+  usleep(300);
 }
 
-// Turn transmitter on
+// Turn transmitter off
 void txoff() {
   //struct GPCTL setupword = {6/*SRC*/, 0, 0, 0, 0, 1,0x5a};
   //ACCESS_BUS_ADDR(CM_GP0CTL_BUS) = *((int*)&setupword);
   disable_clock();
+  //TX SWITCH LOW
+  SETBIT_BUS_ADDR(GPIO_CLR_BASE , 5);
 }
 
 // Transmit symbol sym for tsym seconds.
