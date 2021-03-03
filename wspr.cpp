@@ -170,6 +170,9 @@ volatile unsigned *peri_base_virt = NULL;
 
 // The following are all bus addresses.
 #define GPIO_BUS_BASE (0x7E200000)
+//added for TX SWITCH
+#define GPIO_SET_BASE (0x7E20001c)
+#define GPIO_CLR_BASE (0x7E200028)
 #define CM_GP0CTL_BUS (0x7e101070)
 #define CM_GP0DIV_BUS (0x7e101074)
 #define PADS_GPIO_0_27_BUS  (0x7e10002c)
@@ -317,6 +320,12 @@ void txon() {
   SETBIT_BUS_ADDR(GPIO_BUS_BASE , 14);
   CLRBIT_BUS_ADDR(GPIO_BUS_BASE , 13);
   CLRBIT_BUS_ADDR(GPIO_BUS_BASE , 12);
+  
+  //GPIO 5 USED FOR TX SWITCH
+  //SET AS OUTPUT
+  CLRBIT_BUS_ADDR(GPIO_BUS_BASE , 17);
+  CLRBIT_BUS_ADDR(GPIO_BUS_BASE , 16);
+  SETBIT_BUS_ADDR(GPIO_BUS_BASE , 15);
 
   // Set GPIO drive strength, more info: http://www.scribd.com/doc/101830961/GPIO-Pads-Control2
   //ACCESS_BUS_ADDR(PADS_GPIO_0_27_BUS) = 0x5a000018 + 0;  //2mA -3.4dBm
@@ -336,13 +345,18 @@ void txon() {
   // Enable clock.
   setupword = {6/*SRC*/, 1, 0, 0, 0, 3,0x5a};
   ACCESS_BUS_ADDR(CM_GP0CTL_BUS) = *((int*)&setupword);
+  
+  // TX SWITCH HIGH
+  SETBIT_BUS_ADDR(GPIO_SET_BASE , 5);
 }
 
-// Turn transmitter on
+// Turn transmitter off
 void txoff() {
   //struct GPCTL setupword = {6/*SRC*/, 0, 0, 0, 0, 1,0x5a};
   //ACCESS_BUS_ADDR(CM_GP0CTL_BUS) = *((int*)&setupword);
   disable_clock();
+  //TX SWITCH LOW
+  SETBIT_BUS_ADDR(GPIO_CLR_BASE , 5);
 }
 
 // Transmit symbol sym for tsym seconds.
@@ -731,6 +745,7 @@ void print_usage() {
   std::cout << "    Do not use NTP to correct frequency error of RPi crystal." << std::endl;
   std::cout << "  -r --repeat" << std::endl;
   std::cout << "    Repeatedly, and in order, transmit on all the specified command line freqs." << std::endl;
+  std::cout << "  -d --txdelay <msec> delay time in msec from GPIO 5 activation and start of TX>" << std::endl;
   std::cout << "  -x --terminate <n>" << std::endl;
   std::cout << "    Terminate after n transmissions have been completed." << std::endl;
   std::cout << "  -o --offset" << std::endl;
@@ -765,6 +780,7 @@ void parse_commandline(
   double & ppm,
   bool & self_cal,
   bool & repeat,
+  int & txdelay,
   bool & random_offset,
   double & test_tone,
   bool & no_delay,
@@ -775,6 +791,7 @@ void parse_commandline(
   ppm=0;
   self_cal=true;
   repeat=false;
+  txdelay=0;
   random_offset=false;
   test_tone=NAN;
   no_delay=false;
@@ -787,7 +804,8 @@ void parse_commandline(
     {"self-calibration", no_argument,       0, 's'},
     {"free-running",     no_argument,       0, 'f'},
     {"repeat",           no_argument,       0, 'r'},
-    {"terminate",        required_argument, 0, 'x'},
+    {"txdelay",        	 required_argument, 0, 'd'},
+	{"terminate",        required_argument, 0, 'x'},
     {"offset",           no_argument,       0, 'o'},
     {"test-tone",        required_argument, 0, 't'},
     {"no-delay",         no_argument,       0, 'n'},
@@ -797,7 +815,7 @@ void parse_commandline(
   while (true) {
     /* getopt_long stores the option index here. */
     int option_index = 0;
-    int c = getopt_long (argc, argv, "hp:sfrx:ot:n",
+    int c = getopt_long (argc, argv, "hp:sfrd:x:ot:n",
                      long_options, &option_index);
     if (c == -1)
       break;
@@ -830,7 +848,18 @@ void parse_commandline(
       case 'r':
         repeat=true;
         break;
-      case 'x':
+      case 'd':
+        txdelay=strtol(optarg,&endp,10);
+        if ((optarg==endp)||(*endp!='\0')) {
+          std::cerr << "Error: could not parse txdelay value" << std::endl;
+          ABORT(-1);
+        }
+		if (txdelay<0) {
+          std::cerr << "Error: txdelay parameter must be >= 0" << std::endl;
+          ABORT(-1);
+        }
+		break;
+	  case 'x':
         terminate=strtol(optarg,&endp,10);
         if ((optarg==endp)||(*endp!='\0')) {
           std::cerr << "Error: could not parse termination argument" << std::endl;
@@ -987,6 +1016,9 @@ void parse_commandline(
     }
     if (random_offset) {
       temp << "  A small random frequency offset will be added to all transmissions" << std::endl;
+    }
+	if (txdelay>0) {
+      temp << "  TX delay: " << txdelay << " milliseconds." << std::endl;
     }
     if (temp.str().length()) {
       std::cout << "Extra options:" << std::endl;
@@ -1149,6 +1181,7 @@ int main(const int argc, char * const argv[]) {
   double ppm;
   bool self_cal;
   bool repeat;
+  int txdelay;
   bool random_offset;
   double test_tone;
   bool no_delay;
@@ -1164,6 +1197,7 @@ int main(const int argc, char * const argv[]) {
     ppm,
     self_cal,
     repeat,
+	txdelay,
     random_offset,
     test_tone,
     no_delay,
@@ -1299,7 +1333,8 @@ int main(const int argc, char * const argv[]) {
         struct timeval sym_start;
         struct timeval diff;
         int bufPtr=0;
-        txon();
+		txon();
+		usleep(txdelay*1000);
         for (int i = 0; i < 162; i++) {
           gettimeofday(&sym_start,NULL);
           timeval_subtract(&diff, &sym_start, &tvBegin);
