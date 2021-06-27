@@ -899,7 +899,7 @@ void parse_commandline(
     } else if (!strcasecmp(argv[optind],"160m-15")) {
       parsed_freq=1838212.5;
     } else if (!strcasecmp(argv[optind],"80m")) {
-      parsed_freq=3594100.0;
+      parsed_freq=3570100.0;
     } else if (!strcasecmp(argv[optind],"60m")) {
       parsed_freq=5288700.0;
     } else if (!strcasecmp(argv[optind],"40m")) {
