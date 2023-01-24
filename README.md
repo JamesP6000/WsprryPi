@@ -1,4 +1,4 @@
-Raspberry Pi bareback LF/MF/HF/VHF WSPR transmitter
+# Raspberry Pi bareback LF/MF/HF/VHF WSPR transmitter
 
 Makes a very simple WSPR beacon from your RasberryPi by connecting GPIO
 port to Antenna (and LPF), operates on LF, MF, HF and VHF bands from
@@ -7,22 +7,22 @@ port to Antenna (and LPF), operates on LF, MF, HF and VHF bands from
 Compatible with the original Raspberry Pi, the Raspberry Pi 2/3, and
 the Pi Zero.
 
-!!!!!!
-2017-04-21
-Do note that some users have been reporting lockups with recent OS versions.
-I have not been able to reproduce the problems on my RPI1 and RPI3 running
-the latest Jessie-Lite.
-https://github.com/JamesP6000/WsprryPi/issues/6#issuecomment-296233932
-!!!!!!
+This version uses https://github.com/F5OEO/librpitx
+**You need to add gpu_freq=250 in /boot/config.txt. Without that transmiting is unstable"**
+
 
 ******
 Installation / update:
 ******
   Download and compile code:
     sudo apt-get install git
-    git clone https://github.com/JamesP6000/WsprryPi.git
+    git clone https://github.com/F5OEO/WsprryPi.git
     cd WsprryPi
+    git clone https://github.com/F5OEO/librpitx.git 
+    cd librpitx/src  
     make
+    cd ../../
+    make 
 
   Install to /usr/local/bin:
     sudo make install
@@ -176,14 +176,6 @@ Calibration:
   set correction by specifying --test-tone 780000 --ppm <ppm> on the command
   line and confirming that the Pi is still zero beating the AM station.
 
-******
-PWM Peripheral:
-******
-  The code uses the RPi PWM peripheral to time the frequency transitions
-  of the output clock. This peripheral is also used by the RPi sound system
-  and hence any sound events that occur during a WSPR transmission will
-  interfere with WSPR transmissions. Sound can be permanently disabled
-  by editing /etc/modules and commenting out the snd-bcm2835 device.
 
 ******
 Example usage:
@@ -248,6 +240,7 @@ Credits:
   Retzler András (HA7ILM) for the massive changes that were required to
   incorporate the mailbox code so that the RPi2 and RPi3 could be supported.
 
+  Evariste COURJAUD F5OEO : adapt to use librpitx and simplify code 
   [1] PiFM code from
       http://www.icrobotics.co.uk/wiki/index.php/Turning_the_Raspberry_Pi_Into_an_FM_Transmitter
   [2] Original WSPR Pi transmitter code by Dan:
