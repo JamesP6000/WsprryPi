@@ -1,4 +1,4 @@
-Raspberry Pi bareback LF/MF/HF/VHF WSPR transmitter
+## Raspberry Pi bareback LF/MF/HF/VHF WSPR transmitter
 
 Makes a very simple WSPR beacon from your RasberryPi by connecting GPIO
 port to Antenna (and LPF), operates on LF, MF, HF and VHF bands from
@@ -7,32 +7,38 @@ port to Antenna (and LPF), operates on LF, MF, HF and VHF bands from
 Compatible with the original Raspberry Pi, the Raspberry Pi 2/3, and
 the Pi Zero.
 
-!!!!!!
-2017-04-21
+### 2023-07-11
+Some minor tweaks to fix compile errors on the latest Raspbery Pi OS as of July 2023 - Debian version: 11 (bullseye)
+
+### 2017-04-21
 Do note that some users have been reporting lockups with recent OS versions.
 I have not been able to reproduce the problems on my RPI1 and RPI3 running
 the latest Jessie-Lite.
 https://github.com/JamesP6000/WsprryPi/issues/6#issuecomment-296233932
-!!!!!!
 
-******
-Installation / update:
-******
+## Installation / update:
+  
   Download and compile code:
-    sudo apt-get install git
-    git clone https://github.com/JamesP6000/WsprryPi.git
-    cd WsprryPi
-    make
-
+`    sudo apt-get install git
+`
+`    git clone https://github.com/JamesP6000/WsprryPi.git
+`
+`    cd WsprryPi
+`
+`    make
+`
   Install to /usr/local/bin:
-    sudo make install
+`    sudo make install
+`
 
   Uninstall:
-    sudo make uninstall
+`    sudo make uninstall
+`
 
-******
-Usage: (WSPR --help output):
-******
+## Usage: 
+
+`wspr --help
+`
 
   If running from the console, recent versions of Jessie cause WsprryPi to
   crash when the console screen blanks. The symptom is that WsppryPi works
@@ -84,9 +90,8 @@ Usage: (WSPR --help output):
   be 10, representing the signal power coming out of the Pi. Set this value
   appropriately if you are using an external amplifier.
 
-******
-Radio licensing / RF:
-******
+## Radio licensing / RF:
+
   In order to transmit legally, a HAM Radio License is REQUIRED for running
   this experiment. The output is a square wave so a low pass filter is REQUIRED.
   Connect a low-pass filter (via decoupling C) to GPIO4 (GPCLK0) and Ground pin
@@ -125,9 +130,7 @@ Radio licensing / RF:
   of isolation, e.g. by using a RF transformer, a simple buffer/driver/PA
   stage, two schottky small signal diodes back to back.
 
-******
-TX Timing:
-******
+## TX Timing:
   This software is using system time to determine the start of WSPR
   transmissions, so keep the system time synchronised within 1sec precision,
   i.e. use NTP network time synchronisation or set time manually with date
@@ -137,9 +140,7 @@ TX Timing:
   power.  Reception reports can be viewed on Weak Signal Propagation Reporter
   Network at: http://wsprnet.org/drupal/wsprnet/spots
 
-******
-Calibration:
-******
+## Calibration:
   As of 2017-02, NTP calibration is enabled by default and produces a
   frequency error of about 0.1 PPM after the Pi has temperature stabilized
   and the NTP loop has converged.
@@ -176,53 +177,45 @@ Calibration:
   set correction by specifying --test-tone 780000 --ppm <ppm> on the command
   line and confirming that the Pi is still zero beating the AM station.
 
-******
-PWM Peripheral:
-******
+## PWM Peripheral:
   The code uses the RPi PWM peripheral to time the frequency transitions
   of the output clock. This peripheral is also used by the RPi sound system
   and hence any sound events that occur during a WSPR transmission will
   interfere with WSPR transmissions. Sound can be permanently disabled
   by editing /etc/modules and commenting out the snd-bcm2835 device.
 
-******
-Example usage:
-******
+## Example usage:
   Brief help screen
-    ./wspr --help
-
+`    ./wspr --help
+`
   Transmit a constant test tone at 780 kHz.
-    sudo ./wspr --test-tone 780e3
-
+`    sudo ./wspr --test-tone 780e3
+`
   Using callsign N9NNN, locator EM10, and TX power 33 dBm, transmit a single
   WSPR transmission on the 20m band using NTP based frequency offset
   calibration.
-    sudo ./wspr N9NNN EM10 33 20m
-
+`    sudo ./wspr N9NNN EM10 33 20m
+`
   The same as above, but without NTP calibration:
-    sudo ./wspr --free-running N9NNN EM10 33 20m
-
+`    sudo ./wspr --free-running N9NNN EM10 33 20m
+`
   Transmit a WSPR transmission slightly off-center on 30m every 10 minutes for
   a total of 7 transmissions, and using a fixed PPM correction value.
-    sudo ./wspr --repeat --terminate 7 --ppm 43.17 N9NNN EM10 33 10140210 0 0 0 0
-
+`    sudo ./wspr --repeat --terminate 7 --ppm 43.17 N9NNN EM10 33 10140210 0 0 0 0
+`
   Transmit repeatedly on 40m, use NTP based frequency offset calibration,
   and add a random frequency offset to each transmission to minimize collisions
   with other transmitters.
-    sudo ./wspr --repeat --offset --self-calibration N9NNN EM10 33 40m
-
-******
-Reference documentation:
-******
+`    sudo ./wspr --repeat --offset --self-calibration N9NNN EM10 33 40m
+`
+## Reference documentation:
   http://www.raspberrypi.org/wp-content/uploads/2012/02/BCM2835-ARM-Peripherals.pdf
   http://www.scribd.com/doc/127599939/BCM2835-Audio-clocks
   http://www.scribd.com/doc/101830961/GPIO-Pads-Control2
   https://github.com/mgottschlag/vctools/blob/master/vcdb/cm.yaml
   https://www.kernel.org/doc/Documentation/vm/pagemap.txt
 
-******
-Credits:
-******
+## Credits:
   Credits goes to Oliver Mattos and Oskar Weigl who implemented PiFM [1]
   based on the idea of exploiting RPi DPLL as FM transmitter.
 
